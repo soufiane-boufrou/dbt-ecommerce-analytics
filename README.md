@@ -1,5 +1,7 @@
 # E-commerce analytics with dbt
 
+[![dbt CI](https://github.com/soufiane-boufrou/dbt-ecommerce-analytics/actions/workflows/dbt_ci.yml/badge.svg)](https://github.com/soufiane-boufrou/dbt-ecommerce-analytics/actions/workflows/dbt_ci.yml)
+
 An analytics engineering project that turns raw e-commerce exports into tested, documented marts that answer questions like *how much revenue did we make last month?*, *which acquisition channel brings the most valuable customers?* and *how much of our revenue comes from repeat buyers?*
 
 It runs locally on DuckDB in under a second. The SQL is portable to Snowflake, BigQuery or Databricks.
