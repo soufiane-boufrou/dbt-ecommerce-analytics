@@ -1,0 +1,73 @@
+version: 2
+
+models:
+  - name: fct_orders
+    description: One row per order with amounts, delivery time and the customer's order sequence. Includes canceled orders; filter on is_valid_order for revenue.
+    columns:
+      - name: order_id
+        description: Primary key.
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+      - name: is_valid_order
+        description: False for canceled orders. Revenue metrics only count valid orders.
+      - name: order_amount
+        description: Items + freight.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: days_to_deliver
+        description: Days between order and delivery. Null when not delivered.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: customer_order_seq
+        description: 1 for the customer's first order, 2 for the second, and so on (canceled orders included).
+    data_tests:
+      - dbt_utils.expression_is_true:
+          arguments:
+            expression: "abs(order_amount - paid_amount) < 0.01"
+          config:
+            severity: warn
+
+  - name: dim_customers
+    description: One row per customer, with acquisition channel, cohort month and lifetime value on valid orders.
+    columns:
+      - name: customer_id
+        description: Primary key.
+        data_tests: [unique, not_null]
+      - name: cohort_month
+        description: Month of the customer's first valid order. Null if they never ordered.
+      - name: lifetime_revenue
+        description: Sum of order_amount over valid orders.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+      - name: customer_segment
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [never_ordered, one_time, repeat]
+
+  - name: mart_revenue_monthly
+    description: Monthly revenue KPIs on valid orders. One row per month.
+    columns:
+      - name: order_month
+        description: Primary key.
+        data_tests: [unique, not_null]
+      - name: new_customers
+        description: Customers whose first order was in this month.
+      - name: repeat_revenue_share
+        description: Share of revenue from orders that are not the customer's first.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1

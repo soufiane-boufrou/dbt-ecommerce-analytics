@@ -1,0 +1,104 @@
+version: 2
+
+models:
+  - name: stg_shop__customers
+    description: Customers with cleaned text fields and typed timestamps.
+    columns:
+      - name: customer_id
+        description: Primary key.
+        data_tests: [unique, not_null]
+      - name: customer_region
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [north, south, east, west, paris]
+      - name: acquisition_channel
+        description: Marketing channel that brought the customer in.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [organic_search, paid_search, social, referral, email]
+
+  - name: stg_shop__products
+    description: Product catalogue with normalised categories.
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+      - name: product_category
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [home, electronics, fashion, beauty, sports, books]
+
+  - name: stg_shop__orders
+    description: Orders with normalised status and typed timestamps.
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_shop__customers')
+                field: customer_id
+      - name: order_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [delivered, shipped, processing, canceled]
+      - name: delivered_at
+        description: Only set when the order status is delivered.
+        data_tests:
+          - not_null:
+              config:
+                where: "order_status = 'delivered'"
+
+  - name: stg_shop__order_items
+    description: Order lines, with amounts converted from cents to currency units.
+    columns:
+      - name: order_item_id
+        description: Surrogate key on order_id + order_item_seq.
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_shop__orders')
+                field: order_id
+      - name: product_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_shop__products')
+                field: product_id
+      - name: item_price
+        description: Line price (unit price × quantity), excluding freight.
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+
+  - name: stg_shop__payments
+    description: Payments, with amounts converted from cents to currency units.
+    columns:
+      - name: payment_id
+        description: Surrogate key on order_id + payment_seq.
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_shop__orders')
+                field: order_id
+      - name: payment_method
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [credit_card, paypal, gift_card, bank_transfer]
+      - name: amount
+        data_tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0

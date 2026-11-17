@@ -1,0 +1,21 @@
+version: 2
+
+sources:
+  - name: shop
+    description: Raw exports from the e-commerce platform, loaded as-is into the `raw` schema.
+    schema: raw
+    tables:
+      - name: customers
+        description: One row per registered customer.
+      - name: products
+        description: Product catalogue.
+      - name: orders
+        description: One row per order, with its latest status.
+        loaded_at_field: cast(_loaded_at as timestamp)
+        freshness:
+          warn_after: {count: 1, period: day}
+          error_after: {count: 3, period: day}
+      - name: order_items
+        description: One row per line in an order. Amounts are in cents.
+      - name: payments
+        description: One row per payment on an order. An order can be split across several payment methods. Amounts are in cents.

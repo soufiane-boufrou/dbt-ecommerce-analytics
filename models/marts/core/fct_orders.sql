@@ -1,0 +1,20 @@
+select
+    order_id,
+    customer_id,
+    order_status,
+    is_valid_order,
+    ordered_at,
+    cast(ordered_at as date)                        as order_date,
+    delivered_at,
+    date_diff('day', ordered_at, delivered_at)      as days_to_deliver,
+    item_count,
+    unit_count,
+    items_amount,
+    freight_amount,
+    order_amount,
+    paid_amount,
+    payment_count,
+    used_gift_card,
+    customer_order_seq,
+    customer_order_seq = 1                          as is_first_order
+from {{ ref('int_orders__enriched') }}
